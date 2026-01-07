@@ -4,6 +4,7 @@ import { getAQIData } from '@/lib/data-sources/air-quality';
 import { getSoilQualityData } from '@/lib/data-sources/soil-quality';
 import { getDisasterData } from '@/lib/data-sources/disasters';
 import { DistrictDetail, EnvironmentalData, OxygenCalculation } from '@/lib/types';
+import { calculateOxygenRequirements } from '@/lib/utils/oxygen-calculator';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -110,31 +111,53 @@ export async function GET(
             );
         }
 
-        // Call Python calculation service
-        const pythonServiceUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
+        // Calculate oxygen requirements
+        // Try Python service first, fallback to local calculation
         let oxygenCalculation: OxygenCalculation;
+        const pythonServiceUrl = process.env.PYTHON_SERVICE_URL;
 
-            const calcResponse = await fetch(`${pythonServiceUrl}/calculate`, {
-                method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+        if (pythonServiceUrl && pythonServiceUrl !== 'http://localhost:8000') {
+            try {
+                const calcResponse = await fetch(`${pythonServiceUrl}/calculate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        district_name: district.name,
+                        population: district.population,
+                        aqi: envData.aqi,
+                        soil_quality: envData.soilQuality,
+                        disaster_frequency: envData.disasterFrequency,
+                    }),
+                    cache: 'no-store',
+                    signal: AbortSignal.timeout(5000), // 5 second timeout
+                });
+
+                if (calcResponse.ok) {
+                    oxygenCalculation = await calcResponse.json();
+                } else {
+                    throw new Error('Python service returned error');
+                }
+            } catch (error) {
+                console.warn('Python service unavailable, using local calculation:', error);
+                // Fallback to local calculation
+                oxygenCalculation = calculateOxygenRequirements({
                     district_name: district.name,
                     population: district.population,
                     aqi: envData.aqi,
                     soil_quality: envData.soilQuality,
                     disaster_frequency: envData.disasterFrequency,
-                }),
-                cache: 'no-store',
+                });
+            }
+        } else {
+            // Use local calculation (no Python service configured)
+            oxygenCalculation = calculateOxygenRequirements({
+                district_name: district.name,
+                population: district.population,
+                aqi: envData.aqi,
+                soil_quality: envData.soilQuality,
+                disaster_frequency: envData.disasterFrequency,
             });
-
-            if (!calcResponse.ok) {
-            return NextResponse.json(
-                { error: 'Oxygen calculation service unavailable' },
-                { status: 503 }
-            );
         }
-
-        oxygenCalculation = await calcResponse.json();
 
         // Fetch district-level tree contributions
         const contributionsRef = adminDb.collection('tree_contributions');
@@ -174,10 +197,18 @@ export async function GET(
         };
 
         return NextResponse.json(response);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching district details:', error);
+        console.error('Error stack:', error?.stack);
+        console.error('Error message:', error?.message);
+        
+        // Provide more detailed error information in development
+        const errorMessage = process.env.NODE_ENV === 'development' 
+            ? error?.message || 'Failed to fetch district details'
+            : 'Failed to fetch district details';
+        
         return NextResponse.json(
-            { error: 'Failed to fetch district details' },
+            { error: errorMessage, details: process.env.NODE_ENV === 'development' ? error?.stack : undefined },
             { status: 500 }
         );
     }
