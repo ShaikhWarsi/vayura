@@ -42,6 +42,12 @@ export function Header() {
                                     Leaderboard
                                 </Link>
                                 <Link
+                                    href="/calculator"
+                                    className="text-sm text-gray-700 hover:text-gray-900 transition-colors font-medium"
+                                >
+                                    CO₂ Calculator
+                                </Link>
+                                <Link
                                     href="/methodology"
                                     className="text-sm text-gray-700 hover:text-gray-900 transition-colors font-medium"
                                 >
@@ -208,6 +214,17 @@ export function Header() {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                     </svg>
                                     <span>Leaderboard</span>
+                                </Link>
+
+                                <Link
+                                    href="/calculator"
+                                    onClick={() => setShowMobileMenu(false)}
+                                    className="flex items-center gap-3 px-4 py-3.5 text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-all duration-200 font-medium group"
+                                >
+                                    <svg className="w-5 h-5 text-gray-400 group-hover:text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>CO₂ Calculator</span>
                                 </Link>
 
                                 <Link
