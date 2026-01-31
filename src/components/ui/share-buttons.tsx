@@ -84,12 +84,14 @@ export function ShareButtons({ districtName, treesNeeded, url }: ShareButtonsPro
             rel="noopener noreferrer"
             className={`flex items-center justify-center p-3 rounded-xl border border-gray-100 text-gray-600 transition-all duration-200 ${link.color}`}
             title={`Share on ${link.name}`}
+            aria-label={`Share on ${link.name}`}
           >
             {link.icon}
           </a>
         ))}
         <button
           onClick={copyToClipboard}
+          aria-label={copied ? "Link copied to clipboard" : "Copy report link to clipboard"}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-200 ${
             copied
               ? "bg-green-50 border-green-200 text-green-600"
